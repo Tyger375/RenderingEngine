@@ -3,11 +3,12 @@
 #include <iostream>
 #include <ostream>
 #include <windows.h>
-#include "rendering.cuh"
+#include "rendering/rendering.cuh"
 
 static bool quit = false;
 
-Frame frame = {};
+Frame frame{};
+Camera h_camera;
 
 LRESULT CALLBACK WindowProcessMessage(HWND, UINT, WPARAM, LPARAM);
 
@@ -19,7 +20,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
     AllocConsole(); // Open a new console
     freopen("CONOUT$", "w", stdout); // Redirect stdout to the console
 
+    h_camera.local_matrix = Matrix4x4(
+        {1, 0, 0},
+        {0, 1, 0},
+        {0, 0, 1},
+        {0, 0, 0}
+        ); // * Matrix4x4::rotation_x(15 * (M_PI / 180.0f));
+    h_camera.inv_local_matrix = h_camera.local_matrix.inverse();
+
     prepare_objects();
+    update_objects();
 
     const wchar_t window_class_name[] = L"My Window Class";
     static WNDCLASS window_class = { 0 };
@@ -38,7 +48,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
     window_handle = CreateWindow(
         window_class_name,
         L"Drawing Pixels",
-        (WS_OVERLAPPEDWINDOW & ~WS_SIZEBOX) | WS_VISIBLE,
+        WS_OVERLAPPEDWINDOW | WS_VISIBLE,
         0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT, NULL, NULL, hInstance, NULL);
     if(window_handle == NULL) { return -1; }
 
@@ -62,6 +72,36 @@ LRESULT CALLBACK WindowProcessMessage(HWND window_handle, UINT message, WPARAM w
         case WM_DESTROY: {
             quit = true;
         } break;
+
+        case WM_KEYDOWN: {
+            if (wParam == VK_ESCAPE) {
+                quit = true;
+            }
+        }
+        case WM_CHAR: {
+            std::cout << "char pressed: " << wParam << std::endl;
+            if (wParam == 'W') {
+                h_camera.local_matrix.translate_origin(vec3f{.1, 0, 0});
+                h_camera.inv_local_matrix = h_camera.local_matrix.inverse();
+
+                update_objects();
+            } else if (wParam == 'S') {
+                h_camera.local_matrix.translate_origin(vec3f{-.1, 0, 0});
+                h_camera.inv_local_matrix = h_camera.local_matrix.inverse();
+
+                update_objects();
+            } else if (wParam == 'A') {
+                h_camera.local_matrix.translate_origin(vec3f{0, -.1, 0});
+                h_camera.inv_local_matrix = h_camera.local_matrix.inverse();
+
+                update_objects();
+            } else if (wParam == 'D') {
+                h_camera.local_matrix.translate_origin(vec3f{0, .1, 0});
+                h_camera.inv_local_matrix = h_camera.local_matrix.inverse();
+
+                update_objects();
+            }
+        }
 
         case WM_PAINT: {
             static PAINTSTRUCT paint;
