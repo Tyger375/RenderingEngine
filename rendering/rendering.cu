@@ -6,7 +6,6 @@
 static Camera* d_camera;
 
 void update_camera() {
-    std::cout << h_camera.local_matrix.x().x << std::endl;
     cudaMemcpy(d_camera, &h_camera, sizeof(Camera), cudaMemcpyHostToDevice);
 }
 
@@ -27,16 +26,22 @@ void prepare_objects() {
         return;
     }
 
-    auto* _spheres = (Sphere*)malloc(sizeof(Sphere) * 2);
+    auto* _spheres = (Sphere*)malloc(sizeof(Sphere) * 3);
     _spheres[0].center = vec3f { 5, 0, 0 };
+    _spheres[0].material = {vec3f { 1, 0, 0 }, {}, 0};
     _spheres[0].radius = 1;
 
     _spheres[1].center = vec3f { 2, 3, 0 };
+    _spheres[1].material = {vec3f { 0, 0, 1 }, {}, 0};
     _spheres[1].radius = 1;
 
+    _spheres[2].center = vec3f { 4, -4, 4 };
+    _spheres[2].material = {vec3f { 0, 0, 0 }, {1, 1, 1}, 1};
+    _spheres[2].radius = 3;
+
     Sphere* d_spheres;
-    cudaMalloc(&d_spheres, sizeof(Sphere) * 2);
-    cudaMemcpy(d_spheres, _spheres, sizeof(Sphere) * 2, cudaMemcpyHostToDevice);
+    cudaMalloc(&d_spheres, sizeof(Sphere) * 3);
+    cudaMemcpy(d_spheres, _spheres, sizeof(Sphere) * 3, cudaMemcpyHostToDevice);
     cudaMemcpyToSymbol(spheres, &d_spheres, sizeof(Sphere*));
 
     free(_spheres);
@@ -78,6 +83,7 @@ __global__ void build(uint32_t* buffer, int width, int height) {
 
         vec3f rgb = frag(
             {_x, _y},
+            {(int)x, (int)y},
             {width, height}
         );
         buffer[pos] = vec_to_rgb(rgb);  // Set the pixel value to white (or any value)

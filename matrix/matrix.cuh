@@ -104,7 +104,9 @@ struct Matrix4x4 {
 
     void translate_origin(vec3f add);
 
-    static Matrix4x4 rotation_x(float angle);
+    static Matrix4x4 rotation_x(float alpha);
+    static Matrix4x4 rotation_y(float alpha);
+    static Matrix4x4 rotation_z(float alpha);
 };
 
 #endif //MATRIX_H

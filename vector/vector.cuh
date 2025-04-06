@@ -8,6 +8,20 @@ struct vec2i {
 
 struct vec2f {
     float x, y;
+
+    __device__ __host__ vec2f operator+(vec2f s) const;
+
+    __device__ __host__ vec2f operator-(vec2f s) const;
+
+    __device__ __host__ vec2f operator*(float s) const;
+
+    __device__ __host__ vec2f operator/(float s) const;
+
+    __device__ __host__ float dot(vec2f s) const;
+
+    __device__ __host__ float magnitude() const;
+
+    __device__ __host__ vec2f normalize() const;
 };
 
 struct vec3f {
@@ -18,6 +32,7 @@ struct vec3f {
     __device__ __host__ vec3f operator-(vec3f s) const;
 
     __device__ __host__ vec3f operator*(float s) const;
+    __device__ __host__ vec3f operator*(vec3f s) const;
 
     __device__ __host__ vec3f operator/(float s) const;
 

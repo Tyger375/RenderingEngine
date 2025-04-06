@@ -15,9 +15,16 @@ struct Camera {
     Matrix4x4 inv_local_matrix;
 };
 
+struct Material {
+    vec3f color;
+    vec3f emission_color;
+    float emission_strength;
+};
+
 struct Sphere {
     vec3f center;
     float radius;
+    Material material;
 };
 
 extern Camera h_camera;

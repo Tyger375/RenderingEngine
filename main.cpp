@@ -16,6 +16,8 @@ static BITMAPINFO frame_bitmap_info;
 static HBITMAP frame_bitmap = 0;
 static HDC frame_device_context = 0;
 
+POINT lastMousePos;
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, int nCmdShow) {
     AllocConsole(); // Open a new console
     freopen("CONOUT$", "w", stdout); // Redirect stdout to the console
@@ -52,6 +54,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
         0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT, NULL, NULL, hInstance, NULL);
     if(window_handle == NULL) { return -1; }
 
+    SetCapture(window_handle);
+
     while(!quit) {
         static MSG message = { 0 };
         while(PeekMessage(&message, NULL, 0, 0, PM_REMOVE)) { DispatchMessage(&message); }
@@ -68,10 +72,56 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
 
 LRESULT CALLBACK WindowProcessMessage(HWND window_handle, UINT message, WPARAM wParam, LPARAM lParam) {
     switch(message) {
+        case WM_CREATE: {
+            SetCapture(window_handle);
+            ShowCursor(FALSE);
+        } break;
+
         case WM_QUIT:
         case WM_DESTROY: {
             quit = true;
         } break;
+
+        case WM_MOUSEMOVE: {
+            // Get the current cursor position
+            RECT rect;
+            GetWindowRect(window_handle, &rect); // Get the window's absolute position
+
+            // Calculate the center of the window in screen coordinates
+            int centerX = (rect.left + rect.right) / 2;
+            int centerY = (rect.top + rect.bottom) / 2;
+
+            POINT currentMousePos;
+            GetCursorPos(&currentMousePos);
+
+            // Calculate the movement
+            const auto dx = (float)(currentMousePos.x - centerX);
+            const auto dy = (float)(currentMousePos.y - centerY);
+
+            auto dir = vec2f {dx, 0};
+
+            if (dir.magnitude() != 0) {
+                constexpr float deltaAlpha = .5 * (M_PI / 180);
+                vec2f rotation = dir.normalize() * deltaAlpha;
+
+                if (rotation.y != 0) {
+                    h_camera.local_matrix = h_camera.local_matrix * Matrix4x4::rotation_y(rotation.y);
+                }
+                if (rotation.x != 0) {
+                    h_camera.local_matrix = h_camera.local_matrix * Matrix4x4::rotation_z(rotation.x);
+                }
+                h_camera.inv_local_matrix = h_camera.local_matrix.inverse();
+
+                update_objects();
+            }
+
+            // Update the last known mouse position
+            //lastMousePos = currentMousePos;
+
+            // Set the cursor position back to the center of the window
+            SetCursorPos(centerX, centerY);
+            break;
+        }
 
         case WM_KEYDOWN: {
             if (wParam == VK_ESCAPE) {
@@ -79,7 +129,6 @@ LRESULT CALLBACK WindowProcessMessage(HWND window_handle, UINT message, WPARAM w
             }
         }
         case WM_CHAR: {
-            std::cout << "char pressed: " << wParam << std::endl;
             if (wParam == 'W') {
                 h_camera.local_matrix.translate_origin(vec3f{.1, 0, 0});
                 h_camera.inv_local_matrix = h_camera.local_matrix.inverse();

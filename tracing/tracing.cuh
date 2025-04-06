@@ -2,6 +2,6 @@
 #define TRACING_CUH
 #include "../vector/vector.cuh"
 
-__device__ vec3f frag(vec2f uv, vec2i size);
+__device__ vec3f frag(vec2f uv, vec2i i, vec2i size);
 
 #endif //TRACING_CUH
